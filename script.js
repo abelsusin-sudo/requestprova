@@ -44,267 +44,170 @@ function mostrarSeccio(seccioId, elementClicat) {
     }
 }
 
-// Funció principal per fer peticions - MÈTODE ACTUALITZAT
+// Funció principal per fer peticions - MÈTODE CORREGIT
 async function ferPeticioGS(accio, parametres = {}) {
     console.log(`🔗 Fent petició ${accio}:`, parametres);
     
     try {
-        // Crear FormData per a POST
-        const formData = new FormData();
-        formData.append('action', accio);
+        // Crear URL amb paràmetres GET (funciona millor amb Google Apps Script)
+        const url = new URL(SCRIPT_URL);
         
-        // Afegir tots els paràmetres
+        // Afegir tots els paràmetres com a query string
+        url.searchParams.append('action', accio);
         Object.keys(parametres).forEach(key => {
             if (parametres[key] !== null && parametres[key] !== undefined) {
-                formData.append(key, parametres[key]);
+                url.searchParams.append(key, parametres[key]);
             }
         });
         
-        console.log('📤 Enviant petició POST a:', SCRIPT_URL);
+        // Afegir timestamp per evitar cache
+        url.searchParams.append('_t', Date.now());
         
-        // Fer la petició amb mode 'no-cors' i redirect manual
-        // Google Apps Script accepta POST amb FormData
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Important: no-cors per evitar errors CORS
-            body: formData,
-            redirect: 'follow'
+        console.log('📤 Enviant petició GET a:', url.toString());
+        
+        // Ús de proxy CORS si cal - però primer provem directe
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            mode: 'cors', // Important: 'cors' per poder llegir la resposta
+            cache: 'no-cache',
+            headers: {
+                'Accept': 'application/json'
+            }
         });
         
-        // Amb mode 'no-cors' no podem llegir la resposta, així que assumim èxit
-        console.log('✅ Petició enviada (mode no-cors)');
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
         
-        // Retornar èxit assumit
-        return { 
-            exit: true, 
-            missatge: 'Petició enviada correctament. Rebràs confirmació per email si és una reserva.',
-            _info: 'Mode no-cors (resposta no llegible)'
-        };
+        const text = await response.text();
+        console.log('📥 Resposta text:', text);
+        
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('❌ Error parsejant JSON:', e);
+            // Si no és JSON vàlid, intentar interpretar com a text
+            data = { text: text, error: 'Resposta no és JSON vàlid' };
+        }
+        
+        console.log('✅ Resposta rebuda:', data);
+        return data;
         
     } catch (error) {
-        console.log('❌ Error en ferPeticioGS:', error);
+        console.log('❌ Error en petició principal:', error.message);
         
-        // Si falla el POST, provar amb mètode fallback
-        return await ferPeticioFallback(accio, parametres);
+        // Provar amb mètode alternatiu
+        return await ferPeticioAlternativa(accio, parametres);
     }
 }
 
-// Mètode fallback per a peticions que fallen
-async function ferPeticioFallback(accio, parametres) {
-    console.log('🔄 Usant mètode fallback per:', accio);
+// Mètode alternatiu per quan falla el primer
+async function ferPeticioAlternativa(accio, parametres) {
+    console.log('🔄 Usant mètode alternatiu per:', accio);
     
     try {
-        // Provar amb JSONP per a peticions GET
-        if (accio !== 'ferReserva') {
-            const url = new URL(SCRIPT_URL);
-            url.searchParams.append('action', accio);
-            
-            Object.keys(parametres).forEach(key => {
-                if (parametres[key] !== null && parametres[key] !== undefined) {
-                    url.searchParams.append(key, parametres[key]);
-                }
-            });
-            
-            // Afegir timestamp per evitar cache
-            url.searchParams.append('_t', Date.now());
-            
-            // Ús de iframe per evitar CORS
-            return await ferPeticioAmbIframe(url.toString());
-        } else {
-            // Per a reserves, usar mètode de formulari
-            return ferPeticioAmbFormulari(accio, parametres);
-        }
-    } catch (fallbackError) {
-        console.log('❌ Error en mètode fallback:', fallbackError);
+        // Provar amb POST i JSON
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                action: accio,
+                ...parametres
+            })
+        });
         
-        // Últim recurs: retornar resposta per defecte
-        const resposta = obtenirRespostaPerDefecte(accio, parametres);
-        resposta._info = 'Mode offline complet';
-        
-        // Guardar petició pendent si és una reserva
-        if (accio === 'ferReserva') {
-            guardarPeticioPendent(accio, parametres);
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
         }
         
-        return resposta;
+        const data = await response.json();
+        console.log('✅ Resposta alternativa rebuda:', data);
+        return data;
+        
+    } catch (error) {
+        console.log('❌ Error en mètode alternatiu:', error.message);
+        
+        // Últim recurs: usar JSONP (funciona sense CORS)
+        return await ferPeticioJSONP(accio, parametres);
     }
 }
 
-// Mètode amb iframe per evitar CORS (per a GET)
-function ferPeticioAmbIframe(url) {
+// Mètode JSONP per evitar completament CORS
+function ferPeticioJSONP(accio, parametres) {
     return new Promise((resolve) => {
-        console.log('🔗 Usant iframe per petició:', url);
+        console.log('🔄 Usant JSONP per:', accio);
         
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = url;
-        iframe.onload = function() {
-            console.log('✅ Iframe carregat - petició enviada');
-            document.body.removeChild(iframe);
-            
-            // No podem llegir la resposta, així que retornem resposta per defecte
-            resolve({ 
-                exit: true, 
-                _info: 'Petició enviada via iframe (resposta no llegible)'
-            });
-        };
+        // Crear un callback únic
+        const callbackName = 'jsonp_callback_' + Date.now();
         
-        iframe.onerror = function() {
-            console.log('❌ Error carregant iframe');
-            document.body.removeChild(iframe);
-            resolve(obtenirRespostaPerDefecte('obtenirDatesOcupades', {}));
-        };
-        
-        document.body.appendChild(iframe);
-        
-        // Timeout de seguretat
-        setTimeout(() => {
-            if (iframe.parentNode) {
-                document.body.removeChild(iframe);
-                console.log('⏰ Timeout iframe');
-                resolve(obtenirRespostaPerDefecte('obtenirDatesOcupades', {}));
-            }
-        }, 5000);
-    });
-}
-
-// Mètode amb formulari per a reserves (fallback)
-function ferPeticioAmbFormulari(accio, parametres) {
-    return new Promise((resolve) => {
-        console.log('📝 Creant formulari per:', accio);
-        
-        // Crear formulari invisible
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = SCRIPT_URL;
-        form.style.display = 'none';
-        form.target = '_blank'; // Obrir en nova pestanya
-        
-        // Input per l'acció
-        const actionInput = document.createElement('input');
-        actionInput.type = 'hidden';
-        actionInput.name = 'action';
-        actionInput.value = accio;
-        form.appendChild(actionInput);
-        
-        // Afegir tots els paràmetres
+        // Crear URL
+        const url = new URL(SCRIPT_URL);
+        url.searchParams.append('action', accio);
         Object.keys(parametres).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = parametres[key];
-            form.appendChild(input);
+            url.searchParams.append(key, parametres[key]);
         });
+        url.searchParams.append('callback', callbackName);
         
-        // Afegir timestamp
-        const timeInput = document.createElement('input');
-        timeInput.type = 'hidden';
-        timeInput.name = 'timestamp';
-        timeInput.value = Date.now();
-        form.appendChild(timeInput);
+        // Crear script element
+        const script = document.createElement('script');
+        script.src = url.toString();
         
-        // Afegir formulari al document
-        document.body.appendChild(form);
-        
-        // Enviar formulari
-        form.submit();
-        
-        // Eliminar formulari després d'un moment
-        setTimeout(() => {
-            if (form.parentNode) {
-                document.body.removeChild(form);
-            }
-        }, 1000);
-        
-        // Retornar resposta d'èxit (no podem llegir la resposta del formulari)
-        const resposta = { 
-            exit: true, 
-            missatge: 'Reserva enviada. Rebràs confirmació per email.',
-            _info: 'Enviada via formulari HTML'
+        // Definir la funció de callback global
+        window[callbackName] = function(data) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            console.log('✅ Resposta JSONP rebuda:', data);
+            resolve(data);
         };
         
-        // Guardar petició pendent per si falla
-        guardarPeticioPendent(accio, parametres);
+        // Gestionar errors
+        script.onerror = function() {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            console.log('❌ Error JSONP, usant resposta per defecte');
+            resolve(obtenirRespostaPerDefecte(accio, parametres));
+        };
         
-        resolve(resposta);
-    });
-}
-
-// Emmagatzemar peticions pendents
-function guardarPeticioPendent(accio, parametres) {
-    try {
-        const pendents = JSON.parse(localStorage.getItem('peticionsPendents') || '[]');
-        pendents.push({
-            accio: accio,
-            parametres: parametres,
-            timestamp: Date.now()
-        });
+        // Afegir script al document
+        document.body.appendChild(script);
         
-        // Mantenir només les últimes 10 peticions
-        if (pendents.length > 10) {
-            pendents.shift();
-        }
-        
-        localStorage.setItem('peticionsPendents', JSON.stringify(pendents));
-        console.log('💾 Petició guardada per intentar més tard:', accio);
-        
-    } catch (e) {
-        console.log('❌ Error guardant petició pendent:', e);
-    }
-}
-
-// Processar peticions pendents
-async function processarPeticionsPendents() {
-    try {
-        const pendents = JSON.parse(localStorage.getItem('peticionsPendents') || '[]');
-        if (pendents.length === 0) return;
-        
-        console.log('🔄 Processant', pendents.length, 'peticions pendents...');
-        
-        const pendentsProcessats = [];
-        
-        for (const peticio of pendents) {
-            try {
-                // Intentar processar la petició
-                await ferPeticioGS(peticio.accio, peticio.parametres);
-                console.log('✅ Petició pendent processada:', peticio.accio);
-            } catch (e) {
-                console.log('❌ Error processant petició pendent:', e);
-                // Mantenir la petició si falla
-                pendentsProcessats.push(peticio);
+        // Timeout per seguretat
+        setTimeout(() => {
+            if (window[callbackName]) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                console.log('⏰ Timeout JSONP, usant resposta per defecte');
+                resolve(obtenirRespostaPerDefecte(accio, parametres));
             }
-        }
-        
-        // Actualitzar localStorage amb les peticions que encara estan pendents
-        localStorage.setItem('peticionsPendents', JSON.stringify(pendentsProcessats));
-        
-    } catch (e) {
-        console.log('❌ Error processant peticions pendents:', e);
-    }
+        }, 10000);
+    });
 }
 
 // Funció per respostes per defecte
 function obtenirRespostaPerDefecte(accio, parametres) {
     console.log('🔄 Usant resposta per defecte per:', accio);
     
-    // Generar dates ocupades de prova basades en les dades reals
-    const avui = new Date();
-    const datesOcupadesProva = [];
-    
-    // Afegir algunes dates properes com a ocupades per a la demo
-    for (let i = 2; i < 5; i++) {
-        const data = new Date(avui);
-        data.setDate(avui.getDate() + i);
-        datesOcupadesProva.push(data.toISOString().split('T')[0]);
-    }
+    // Dates reals del teu full (segons els logs)
+    const datesRealsOcupades = [
+        '2025-10-29', '2025-10-30', '2025-11-04', '2025-11-05', '2025-11-06',
+        '2025-11-07', '2025-11-08', '2025-11-14', '2025-11-15', '2025-11-16',
+        '2025-11-17', '2025-12-19', '2025-12-20', '2025-12-22', '2025-12-23'
+    ];
     
     const respostes = {
         'obtenirDatesOcupades': { 
-            dates: datesOcupadesProva,
-            _info: 'Dades de prova - mode offline'
+            dates: datesRealsOcupades,
+            immoble: parametres.immoble || 'Loft Barcelona',
+            _info: 'Dades reals del full - mode offline'
         },
         'obtenirPreuImmoble': { 
             preu: parametres.immoble === 'Loft Barcelona' ? 120 : 85,
+            immoble: parametres.immoble || 'Loft Barcelona',
             _info: 'Preu de prova - mode offline'
         },
         'verificarDisponibilitat': { 
@@ -320,11 +223,6 @@ function obtenirRespostaPerDefecte(accio, parametres) {
     
     const resposta = respostes[accio] || { error: 'Acció no reconeguda', _info: 'Mode offline' };
     
-    // Guardar petició pendent si és una reserva
-    if (accio === 'ferReserva') {
-        guardarPeticioPendent(accio, parametres);
-    }
-    
     return resposta;
 }
 
@@ -339,6 +237,8 @@ async function carregarDatesOcupades() {
             immoble: immobleSeleccionat
         });
         
+        console.log('📥 Resultat brut:', resultat);
+        
         let datesArray = [];
         
         // Gestió de resposta
@@ -346,15 +246,22 @@ async function carregarDatesOcupades() {
             datesArray = resultat.dates;
         } else if (resultat && resultat.dates) {
             datesArray = resultat.dates;
+        } else if (Array.isArray(resultat)) {
+            datesArray = resultat;
         } else {
+            console.warn('⚠️ Format de resposta no reconegut:', resultat);
             datesArray = [];
         }
         
         datesOcupades = datesArray;
-        console.log('📅 Dates ocupades carregades:', datesOcupades.length, 'dates');
+        console.log('📅 Dates ocupades carregades:', datesOcupades.length, 'dates:', datesOcupades);
         
+        // Actualitzar calendaris
         generarCalendariIniciPermanent();
         generarCalendariFiPermanent();
+        
+        // Actualitzar preu també
+        obtenirPreuImmoble();
         
     } catch (error) {
         console.log('❌ Error carregant dates:', error);
@@ -389,50 +296,61 @@ function estaOcupat(data) {
     const dataString = dataNormalitzada.toISOString().split('T')[0];
     
     const estaOcupada = datesOcupades.some(dataOcupada => {
-        const dataOcupadaDate = new Date(dataOcupada);
-        const dataOcupadaString = dataOcupadaDate.toISOString().split('T')[0];
-        return dataString === dataOcupadaString;
+        try {
+            const dataOcupadaDate = new Date(dataOcupada);
+            const dataOcupadaString = dataOcupadaDate.toISOString().split('T')[0];
+            const coincideix = dataString === dataOcupadaString;
+            
+            if (coincideix) {
+                console.log(`❌ TROBADA DATA OCUPADA: ${dataString}`);
+            }
+            
+            return coincideix;
+        } catch (e) {
+            console.log(`⚠️ Error processant data ocupada ${dataOcupada}:`, e);
+            return false;
+        }
     });
     
     return estaOcupada;
 }
 
-// A la funció estaOcupat, afegeix més logging per debug:
-function estaOcupat(data) {
-    if (!data || !(data instanceof Date)) return false;
-    
-    const dataNormalitzada = new Date(data.getFullYear(), data.getMonth(), data.getDate());
-    const dataString = dataNormalitzada.toISOString().split('T')[0];
-    
-    console.log(`🔍 Comprovant data ${dataString} contra ${datesOcupades.length} dates ocupades`);
-    
-    const estaOcupada = datesOcupades.some(dataOcupada => {
-        // Intentar parsejar la data ocupada
-        let dataOcupadaDate;
-        try {
-            dataOcupadaDate = new Date(dataOcupada);
-        } catch (e) {
-            console.log(`❌ Error parsejant data ocupada: ${dataOcupada}`);
-            return false;
+// Obtenir preu de l'immoble
+async function obtenirPreuImmoble() {
+    try {
+        const resultat = await ferPeticioGS('obtenirPreuImmoble', {
+            immoble: immobleSeleccionat
+        });
+        
+        console.log('💰 Resultat preu:', resultat);
+        
+        if (resultat && typeof resultat.preu === 'number') {
+            preuPerNit = resultat.preu;
+        } else if (typeof resultat === 'number') {
+            preuPerNit = resultat;
+        } else if (resultat && resultat.preu !== undefined) {
+            preuPerNit = parseFloat(resultat.preu) || (immobleSeleccionat === 'Loft Barcelona' ? 120 : 85);
+        } else {
+            preuPerNit = immobleSeleccionat === 'Loft Barcelona' ? 120 : 85;
         }
         
-        if (isNaN(dataOcupadaDate.getTime())) {
-            console.log(`❌ Data ocupada invàlida: ${dataOcupada}`);
-            return false;
+        console.log('💰 Preu per nit final:', preuPerNit);
+        
+        // Actualitzar a la pàgina si l'element existeix
+        const elementPreu = document.getElementById('resum-preu-nit');
+        if (elementPreu) {
+            elementPreu.textContent = preuPerNit + ' €';
         }
         
-        const dataOcupadaString = dataOcupadaDate.toISOString().split('T')[0];
-        const coincideix = dataString === dataOcupadaString;
+    } catch (error) {
+        console.log('Error obtenint preu:', error);
+        preuPerNit = immobleSeleccionat === 'Loft Barcelona' ? 120 : 85;
         
-        if (coincideix) {
-            console.log(`❌ TROBADA DATA OCUPADA: ${dataString} = ${dataOcupadaString}`);
+        const elementPreu = document.getElementById('resum-preu-nit');
+        if (elementPreu) {
+            elementPreu.textContent = preuPerNit + ' €';
         }
-        
-        return coincideix;
-    });
-    
-    console.log(`📅 Data ${dataString} ${estaOcupada ? '❌ OCUPADA' : '✅ DISPONIBLE'}`);
-    return estaOcupada;
+    }
 }
 
 // Inicialització dels calendaris compactes
@@ -444,7 +362,7 @@ async function inicialitzarCalendarisCompactes() {
     generarCalendariIniciPermanent();
     generarCalendariFiPermanent();
     
-    console.log('✅ Calendaris inicialitzats');
+    console.log('✅ Calendaris inicialitzats amb', datesOcupades.length, 'dates ocupades');
 }
 
 // Generar calendari compacte permanent per data d'entrada
@@ -545,6 +463,7 @@ function generarCalendariCompacte(calendariDiv, mes, any, tipus) {
         if (estaOcupat(dataActual)) {
             classe += ' ocupat';
             disabled = true;
+            console.log(`📅 Marcat ${dataActual.toISOString().split('T')[0]} com a ocupat`);
         }
         
         if (tipus === 'inici-permanent' && dataIniciSeleccionada) {
@@ -574,6 +493,9 @@ function generarCalendariCompacte(calendariDiv, mes, any, tipus) {
     
     html += '</div>';
     calendariDiv.innerHTML = html;
+    
+    // Mostrar informació de debug
+    console.log(`📊 Calendari ${tipus} generat. Dates ocupades: ${datesOcupades.length}`);
 }
 
 // Canviar mes als calendaris compactes
@@ -930,13 +852,35 @@ function tancarModal() {
     document.getElementById('modal-reserva').style.display = 'none';
 }
 
+// Funció per provar la connexió
+function testConnexio() {
+    console.log('🔍 Provant connexió amb Google Apps Script...');
+    
+    // Provar directament la URL
+    const testURL = SCRIPT_URL + '?action=obtenirDatesOcupades&immoble=Loft+Barcelona&_t=' + Date.now();
+    
+    fetch(testURL)
+        .then(response => response.text())
+        .then(text => {
+            console.log('✅ Resposta directa:', text);
+            try {
+                const data = JSON.parse(text);
+                console.log('✅ JSON parsejat:', data);
+            } catch (e) {
+                console.log('❌ No es pot parsejar com a JSON:', e);
+            }
+        })
+        .catch(error => {
+            console.log('❌ Error en test:', error);
+        });
+}
+
 // Inicialització
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Inicialitzant sistema...');
     
-    // Inicialitzar monitor de connexió
-    processarPeticionsPendents();
-    setInterval(processarPeticionsPendents, 30000);
+    // Provar connexió
+    setTimeout(testConnexio, 1000);
     
     // Configurar botons d'immobles
     document.querySelectorAll('.btn-immoble').forEach(btn => {
