@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aulèstia - Reserves d'Allotjament</title>
+    
+    <!-- Google Translate Script -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ca',
+                includedLanguages: 'ca,es,en,fr,de,it,pt,ru,zh-CN,ja,ar',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+    <!-- Enllaços als fitxers externs -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="language-selector">
+                <div class="google-translate-container">
+                    <div id="google_translate_element"></div>
+                </div>
+            </div>
+            
+            <div class="logo">AULÈSTIA</div>
+            <div class="tagline">Allotjaments Únics al Cor de Barcelona</div>
+            
+            <div class="nav-tabs">
+                <a href="javascript:void(0)" class="nav-tab active" onclick="mostrarSeccio('inici', this)">🏠 Inici</a>
+                <a href="javascript:void(0)" class="nav-tab" onclick="mostrarSeccio('immobles', this)">📋 Els Nostres Immobles</a>
+                <a href="javascript:void(0)" class="nav-tab" onclick="mostrarSeccio('reserves', this)">📅 Fer Reserva</a>
+            </div>
+        </header>
+
+        <!-- Secció d'Inici -->
+        <section id="inici" class="section active">
+            <h2 class="section-title">Benvingut a Aulèstia</h2>
+            
+            <div style="text-align: center; max-width: 800px; margin: 0 auto 3rem;">
+                <p style="font-size: 1.2rem; line-height: 1.8; color: #555; margin-bottom: 2rem;">
+                    Aquesta és la web per realitzar les reserves dels immobles a Aulèstia. 
+                    Reserva és directa i no passa per intermediaris
+                    Allotjaments únics al cor del Barri de Gràcia, el barri més de moda de Barcelona. 
+                    Experiències autèntiques en habitatges únics per a la teva estada perfecta.
+                </p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 3rem;">
+                    <div style="text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 15px;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🏠</div>
+                        <h3 style="color: #2c3e50; margin-bottom: 1rem;">Allotjaments Únics</h3>
+                        <p style="color: #666;">Allotjaments amb caràcter i personalitat pròpia</p>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 15px;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📍</div>
+                        <h3 style="color: #2c3e50; margin-bottom: 1rem;">Ubicació Privilegiada</h3>
+                        <p style="color: #666;">Al cor del barri més emblemàtic de Barcelona</p>
+                        <div style="width: 100%; height: 300px; margin-top: 1rem; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                            <iframe 
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2993.188345145789!2d2.143258976337822!3d41.3898999712957!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12a4987b5b4e7c1f%3A0x1fa9918d2f7c4b0!2sCarrer%20d'Aul%C3%A8stia%20i%20Pijoan%2C%20Barcelona!5e0!3m2!1sca!2ses!4v1700000000000!5m2!1sca!2ses" 
+                                width="100%" 
+                                height="100%" 
+                                style="border:0;" 
+                                allowfullscreen="" 
+                                loading="lazy" 
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 3rem;">
+                <button onclick="mostrarSeccio('reserves', this)" style="background: linear-gradient(135deg, #3498db, #27ae60); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                    🚀 Fer Reserva Ara
+                </button>
+            </div>
+        </section>
+
+        <!-- Secció d'Immobles -->
+        <section id="immobles" class="section">
+            <h2 class="section-title">Els Nostres Immobles</h2>
+            
+            <div class="immobles-grid">
+                <!-- Loft Barcelona -->
+                <div class="immoble-card">
+                    <div class="immoble-image">
+                        <img src="https://a0.muscache.com/im/pictures/74cfb7e2-82b3-4e55-9b0c-58853767fc04.jpg?im_w=1200" alt="Habitació Gràcia" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="immoble-content">
+                        <h3 class="immoble-title">Loft Barcelona</h3>
+                        <p class="immoble-description">
+                            Un loft d'estil industrial situat al cor del barri de Gràcia. Amb espais oberts, 
+                            llum natural abundants i una decoració que combina l'antiguitat amb el modern.
+                        </p>
+                        <div class="immoble-features">
+                            <span class="feature">🛏️ 2 habitacions</span>
+                            <span class="feature">🛁 1 bany</span>
+                            <span class="feature">👥 4 persones</span>
+                            <span class="feature">📶 WiFi</span>
+                        </div>
+                        <div class="immoble-price">
+                            Des de 120€ / nit
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Habitació Gràcia -->
+                <div class="immoble-card">
+                    <div class="immoble-image">
+                        <img src="https://www.hotelpaseodegracia.es/wp-content/uploads/2019/03/Standard-Barcelona-07.jpg" alt="Habitació Gràcia" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="immoble-content">
+                        <h3 class="immoble-title">Habitació Gràcia</h3>
+                        <p class="immoble-description">
+                            Una habitació acollidora en un pis compartit al vibrant barri de Gràcia. 
+                            Perfecte per a viatgers que busquen autenticitat i una experiència local.
+                        </p>
+                        <div class="immoble-features">
+                            <span class="feature">🛏️ 1 habitació</span>
+                            <span class="feature">🛁 Bany compartit</span>
+                            <span class="feature">👥 2 persones</span>
+                            <span class="feature">🏙️ Terrassa</span>
+                        </div>
+                        <div class="immoble-price">
+                            Des de 85€ / nit
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button onclick="mostrarSeccio('reserves', this)" style="background: linear-gradient(135deg, #3498db, #27ae60); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                    📅 Reservar Ara
+                </button>
+            </div>
+        </section>
+
+        <!-- Secció de Reserves -->
+        <section id="reserves" class="section">
+            <h2 class="section-title">Fes la Teva Reserva</h2>
+            
+            <div class="main-content">
+                <!-- Selecció d'Immoble -->
+                <div class="selector-immoble">
+                    <div class="btn-immoble seleccionat" data-immoble="Loft Barcelona">
+                        🏠 Loft Barcelona
+                    </div>
+                    <div class="btn-immoble" data-immoble="Habitació Gràcia">
+                        🛏️ Habitació Gràcia
+                    </div>
+                </div>
+                
+                <!-- Secció de Dates -->
+                <div class="seccio-dates">
+                    <h3 style="margin-bottom: 1rem; color: #2c3e50;">📅 Selecciona les teves dates</h3>
+                    
+                    <div class="inputs-dates">
+                        <div class="form-grup">
+                            <label class="form-label" for="data-inici">Data d'entrada</label>
+                            <div class="data-input-wrapper">
+                                <input type="text" id="data-inici" class="form-input" readonly placeholder="Clica per seleccionar data">
+                            </div>
+                            <!-- Calendari compacte permanent per data d'entrada -->
+                            <div class="calendari-compacte-container">
+                                <div id="calendari-inici-permanent" class="calendari-compacte"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-grup">
+                            <label class="form-label" for="data-fi">Data de sortida</label>
+                            <div class="data-input-wrapper">
+                                <input type="text" id="data-fi" class="form-input" readonly placeholder="Clica per seleccionar data">
+                            </div>
+                            <!-- Calendari compacte permanent per data de sortida -->
+                            <div class="calendari-compacte-container">
+                                <div id="calendari-fi-permanent" class="calendari-compacte"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="missatge-disponibilitat"></div>
+                    
+                    <!-- Botó Continuar (apareix quan hi ha disponibilitat) -->
+                    <div id="boto-continuar-container" style="display: none;">
+                        <button class="btn-continuar" onclick="continuarAmbReserva()">
+                            ➡️ Continuar amb la Reserva
+                        </button>
+                    </div>
+                    
+                    <!-- Llegenda -->
+                    <div class="legenda">
+                        <div class="legenda-item">
+                            <div class="legenda-color" style="background: white; border-color: #ddd;"></div>
+                            <span>Disponible</span>
+                        </div>
+                        <div class="legenda-item">
+                            <div class="legenda-color" style="background: #e74c3c;"></div>
+                            <span>Ocupat</span>
+                        </div>
+                        <div class="legenda-item">
+                            <div class="legenda-color" style="background: #3498db;"></div>
+                            <span>Avui</span>
+                        </div>
+                        <div class="legenda-item">
+                            <div class="legenda-color" style="background: #27ae60;"></div>
+                            <span>Seleccionat</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formulari de Reserva -->
+                <div class="formulari-reserva" id="formulari-reserva">
+                    <h3 style="margin-bottom: 1rem; color: #2c3e50;">📋 Dades de la reserva</h3>
+                    
+                    <div class="info-box">
+                        💡 <strong>Instruccions:</strong> Selecciona l'immoble i les dates, després fes clic a "Verificar Disponibilitat". Quan estigui disponible, fes clic a "Continuar amb la Reserva" per omplir el formulari.
+                    </div>
+                    
+                    <div id="resum-reserva" style="display: none;">
+                        <div class="resum-reserva">
+                            <h4 style="margin-bottom: 1rem; color: #2c3e50;">Resum de la reserva</h4>
+                            <div class="resum-item">
+                                <span>Immoble:</span>
+                                <span id="resum-immoble">-</span>
+                            </div>
+                            <div class="resum-item">
+                                <span>Data d'entrada:</span>
+                                <span id="resum-data-inici">-</span>
+                            </div>
+                            <div class="resum-item">
+                                <span>Data de sortida:</span>
+                                <span id="resum-data-fi">-</span>
+                            </div>
+                            <div class="resum-item">
+                                <span>Nombre de nits:</span>
+                                <span id="resum-nits">0</span>
+                            </div>
+                            <div class="resum-item">
+                                <span>Preu per nit:</span>
+                                <span id="resum-preu-nit">0 €</span>
+                            </div>
+                            <div class="resum-item resum-total">
+                                <span>Preu total:</span>
+                                <span id="resum-total">0 €</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-grup">
+                            <label class="form-label" for="nom">Nom complet *</label>
+                            <input type="text" id="nom" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-grup">
+                            <label class="form-label" for="email">Email *</label>
+                            <input type="email" id="email" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-grup">
+                            <label class="form-label" for="telefon">Telèfon *</label>
+                            <input type="tel" id="telefon" class="form-input" required>
+                        </div>
+                        
+                        <button type="button" class="btn-reservar" id="btn-reservar" onclick="ferReserva()">
+                            🚀 Fer Reserva
+                        </button>
+                    </div>
+                    
+                    <div id="missatge-reserva"></div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-content">
+                <h3>AULÈSTIA</h3>
+                <p>Allotjaments únics al cor de Barcelona</p>
+                <div class="footer-links">
+                    <a href="javascript:void(0)" class="footer-link" onclick="mostrarSeccio('inici', this)">Inici</a>
+                    <a href="javascript:void(0)" class="footer-link" onclick="mostrarSeccio('immobles', this)">Immobles</a>
+                    <a href="javascript:void(0)" class="footer-link" onclick="mostrarSeccio('reserves', this)">Reserves</a>
+                </div>
+                <p>&copy; 2024 Aulèstia. Tots els drets reservats.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Finestra modal de confirmació de reserva -->
+    <div id="modal-reserva" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="tancarModal()">×</button>
+            <div class="modal-icon">✅</div>
+            <h2 class="modal-title">Reserva Rebuda</h2>
+            <p class="modal-message">En breu ens posarem en contacte per confirmar la reserva</p>
+        </div>
+    </div>
+
+    <!-- Enllaç al fitxer JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
