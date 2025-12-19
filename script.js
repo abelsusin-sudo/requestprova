@@ -397,29 +397,42 @@ function estaOcupat(data) {
     return estaOcupada;
 }
 
-// Obtenir preu de l'immoble
-async function obtenirPreuImmoble() {
-    try {
-        const resultat = await ferPeticioGS('obtenirPreuImmoble', {
-            immoble: immobleSeleccionat
-        });
-        
-        if (resultat && typeof resultat.preu === 'number') {
-            preuPerNit = resultat.preu;
-        } else if (typeof resultat === 'number') {
-            preuPerNit = resultat;
-        } else {
-            preuPerNit = immobleSeleccionat === 'Loft Barcelona' ? 120 : 85;
+// A la funció estaOcupat, afegeix més logging per debug:
+function estaOcupat(data) {
+    if (!data || !(data instanceof Date)) return false;
+    
+    const dataNormalitzada = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+    const dataString = dataNormalitzada.toISOString().split('T')[0];
+    
+    console.log(`🔍 Comprovant data ${dataString} contra ${datesOcupades.length} dates ocupades`);
+    
+    const estaOcupada = datesOcupades.some(dataOcupada => {
+        // Intentar parsejar la data ocupada
+        let dataOcupadaDate;
+        try {
+            dataOcupadaDate = new Date(dataOcupada);
+        } catch (e) {
+            console.log(`❌ Error parsejant data ocupada: ${dataOcupada}`);
+            return false;
         }
         
-        console.log('💰 Preu per nit:', preuPerNit);
-        document.getElementById('resum-preu-nit').textContent = preuPerNit + ' €';
+        if (isNaN(dataOcupadaDate.getTime())) {
+            console.log(`❌ Data ocupada invàlida: ${dataOcupada}`);
+            return false;
+        }
         
-    } catch (error) {
-        console.log('Error obtenint preu:', error);
-        preuPerNit = immobleSeleccionat === 'Loft Barcelona' ? 120 : 85;
-        document.getElementById('resum-preu-nit').textContent = preuPerNit + ' €';
-    }
+        const dataOcupadaString = dataOcupadaDate.toISOString().split('T')[0];
+        const coincideix = dataString === dataOcupadaString;
+        
+        if (coincideix) {
+            console.log(`❌ TROBADA DATA OCUPADA: ${dataString} = ${dataOcupadaString}`);
+        }
+        
+        return coincideix;
+    });
+    
+    console.log(`📅 Data ${dataString} ${estaOcupada ? '❌ OCUPADA' : '✅ DISPONIBLE'}`);
+    return estaOcupada;
 }
 
 // Inicialització dels calendaris compactes
