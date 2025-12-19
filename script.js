@@ -201,10 +201,10 @@ function obtenirRespostaPerDefecte(accio, parametres) {
     
     const respostes = {
         'obtenirDatesOcupades': { 
-            dates: datesRealsOcupades,
-            immoble: parametres.immoble || 'Loft Barcelona',
-            _info: 'Dades reals del full - mode offline'
-        },
+              dates: datesRealsOcupades,
+              immoble: parametres.immoble || 'Loft Barcelona',
+              _info: 'Dades reals del full - mode offline'
+            },
         'obtenirPreuImmoble': { 
             preu: parametres.immoble === 'Loft Barcelona' ? 120 : 85,
             immoble: parametres.immoble || 'Loft Barcelona',
