@@ -741,80 +741,98 @@ function validarFormulariReserva() {
 
 // Fer reserva
 async function ferReserva() {
-    const nom = document.getElementById('nom').value;
-    const email = document.getElementById('email').value;
-    const telefon = document.getElementById('telefon').value;
-    const missatgeDiv = document.getElementById('missatge-reserva');
-    const btnReservar = document.getElementById('btn-reservar');
-    
-    // Validar formulari
-    const errorValidacio = validarFormulariReserva();
-    if (errorValidacio) {
-        mostrarMissatge(missatgeDiv, '❌ ' + errorValidacio, 'error');
-        return;
-    }
-    
-    if (!datesValides || !dataIniciSeleccionada || !dataFiSeleccionada) {
-        mostrarMissatge(missatgeDiv, '❌ Si us plau, verifica primer la disponibilitat de les dates', 'error');
-        return;
-    }
+  const nom = document.getElementById('nom').value;
+  const email = document.getElementById('email').value;
+  const telefon = document.getElementById('telefon').value;
+  const missatgeDiv = document.getElementById('missatge-reserva');
+  const btnReservar = document.getElementById('btn-reservar');
+  
+  // ⚠️ AFEGEIX: Desactivar el botó per evitar múltiples clics
+  if (btnReservar.disabled) {
+    console.log('⚠️ Botó ja desactivat, evitant clic duplicat');
+    return;
+  }
+  
+  // Validar formulari
+  const errorValidacio = validarFormulariReserva();
+  if (errorValidacio) {
+    mostrarMissatge(missatgeDiv, '❌ ' + errorValidacio, 'error');
+    return;
+  }
+  
+  if (!datesValides || !dataIniciSeleccionada || !dataFiSeleccionada) {
+    mostrarMissatge(missatgeDiv, '❌ Si us plau, verifica primer la disponibilitat de les dates', 'error');
+    return;
+  }
 
-    const nits = Math.ceil((dataFiSeleccionada - dataIniciSeleccionada) / (1000 * 60 * 60 * 24));
-    const preu_total = nits * preuPerNit;
+  const nits = Math.ceil((dataFiSeleccionada - dataIniciSeleccionada) / (1000 * 60 * 60 * 24));
+  const preu_total = nits * preuPerNit;
 
-    const dadesReserva = {
-        nom: nom.trim(),
-        email: email.trim().toLowerCase(),
-        telefon: telefon.trim(),
-        immoble: immobleSeleccionat,
-        data_inici: dataIniciSeleccionada.toISOString().split('T')[0],
-        data_fi: dataFiSeleccionada.toISOString().split('T')[0],
-        nits: nits,
-        preu_total: preu_total
-    };
+  const dadesReserva = {
+    nom: nom.trim(),
+    email: email.trim().toLowerCase(),
+    telefon: telefon.trim(),
+    immoble: immobleSeleccionat,
+    data_inici: dataIniciSeleccionada.toISOString().split('T')[0],
+    data_fi: dataFiSeleccionada.toISOString().split('T')[0],
+    nits: nits,
+    preu_total: preu_total
+  };
+  
+  console.log('📤 Dades de reserva enviades:', dadesReserva);
+  
+  // ⚠️ DESACTIVAR BOTÓ I AFEGIR TIMEOUT
+  btnReservar.disabled = true;
+  btnReservar.textContent = '⏳ Processant...';
+  
+  // ⚠️ AFEGEIX: Timeout per re-activar el botó si hi ha error
+  const timeoutId = setTimeout(() => {
+    btnReservar.disabled = false;
+    btnReservar.textContent = '🚀 Fer Reserva';
+    mostrarMissatge(missatgeDiv, '⏰ Timeout de connexió. Torna a intentar.', 'error');
+  }, 10000); // 10 segons timeout
+  
+  try {
+    mostrarMissatge(missatgeDiv, '⏳ Processant la teva reserva...', 'info');
     
-    console.log('📤 Dades de reserva enviades:', dadesReserva);
+    const resultat = await ferPeticioGS('ferReserva', dadesReserva);
     
-    // Desactivar botó durant el procés
-    btnReservar.disabled = true;
-    btnReservar.textContent = '⏳ Processant...';
+    // ⚠️ NETEJAR TIMEOUT
+    clearTimeout(timeoutId);
     
-    try {
-        mostrarMissatge(missatgeDiv, '⏳ Processant la teva reserva...', 'info');
+    console.log('📥 Resposta:', resultat);
+    
+    if (resultat && resultat.exit) {
+      mostrarMissatge(missatgeDiv, '✅ ' + (resultat.missatge || 'Reserva realitzada amb èxit! Rebràs confirmació per email.'), 'exit');
+      mostrarModalReserva();
+      
+      // Netejar formulari després de l'èxit
+      setTimeout(() => {
+        document.getElementById('nom').value = '';
+        document.getElementById('email').value = '';
+        document.getElementById('telefon').value = '';
+        netejarSeleccions();
+        amagarFormulariReserva();
         
-        const resultat = await ferPeticioGS('ferReserva', dadesReserva);
-        
-        console.log('📥 Resposta:', resultat);
-        
-        if (resultat && resultat.exit) {
-            mostrarMissatge(missatgeDiv, '✅ ' + (resultat.missatge || 'Reserva realitzada amb èxit! Rebràs confirmació per email.'), 'exit');
-            mostrarModalReserva();
-            
-            // Netejar formulari després de l'èxit
-            setTimeout(() => {
-                document.getElementById('nom').value = '';
-                document.getElementById('email').value = '';
-                document.getElementById('telefon').value = '';
-                netejarSeleccions();
-                amagarFormulariReserva();
-                
-                setTimeout(() => {
-                    mostrarSeccio('inici');
-                }, 1000);
-            }, 3000);
-        } else {
-            const missatgeError = resultat?.missatge || 'Error desconegut en realitzar la reserva';
-            mostrarMissatge(missatgeDiv, '❌ ' + missatgeError, 'error');
-        }
-    } catch (error) {
-        console.error('❌ Error en ferReserva:', error);
-        mostrarMissatge(missatgeDiv, '❌ Error de connexió. Torna a intentar-ho.', 'error');
-    } finally {
-        btnReservar.disabled = false;
-        btnReservar.textContent = '🚀 Fer Reserva';
+        setTimeout(() => {
+          mostrarSeccio('inici');
+        }, 1000);
+      }, 3000);
+    } else {
+      const missatgeError = resultat?.missatge || 'Error desconegut en realitzar la reserva';
+      mostrarMissatge(missatgeDiv, '❌ ' + missatgeError, 'error');
+      // Reactivar botó en cas d'error
+      btnReservar.disabled = false;
+      btnReservar.textContent = '🚀 Fer Reserva';
     }
+  } catch (error) {
+    console.error('❌ Error en ferReserva:', error);
+    mostrarMissatge(missatgeDiv, '❌ Error de connexió. Torna a intentar-ho.', 'error');
+    // Reactivar botó en cas d'error
+    btnReservar.disabled = false;
+    btnReservar.textContent = '🚀 Fer Reserva';
+  }
 }
-
 // Funció auxiliar per formatar dates
 function formatData(data) {
     return data.toLocaleDateString('ca-ES', {
